@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status
+
+from constants import ACCESS_TOKEN_DATA, REFRESH_TOKEN_DATA
 from .interfaces.token_service_interface import TokenServiceInterface
 from jose import jwt, JWTError
 from settings import get_settings
 
 
 class TokenService(TokenServiceInterface):
-
     def __init__(self):
         self._settings = get_settings()
 
@@ -36,3 +37,11 @@ class TokenService(TokenServiceInterface):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Refresh token expired')
         except jwt.JWTError:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid refresh token')
+
+
+class CreateTokensMixin:
+    @staticmethod
+    async def create_tokens(email: str, token_service: TokenServiceInterface):
+        access_token = await token_service.create_token(email=email, token_type='access_token', **ACCESS_TOKEN_DATA)
+        refresh_token = await token_service.create_token(email=email, token_type='refresh_token', **REFRESH_TOKEN_DATA)
+        return {'access_token': access_token, 'refresh_token': refresh_token}
