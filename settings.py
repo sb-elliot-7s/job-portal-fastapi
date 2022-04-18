@@ -12,6 +12,12 @@ class Settings(BaseSettings):
 
     domain: HttpUrl
 
+    key_for_pyotp: str
+    two_factor_auth_interval: int
+
+    sender: str
+    sender_password: str
+
     class Config:
         env_file = '.env'
         env_file_encoding = 'utf-8'

@@ -12,7 +12,6 @@ class RefreshToken(BaseModel):
 
 class Token(RefreshToken):
     access_token: str
-    token_type: str
 
 
 class CreateUserTypeSchema(BaseModel):
@@ -34,3 +33,7 @@ class CreateUserAccountSchema(BaseUserAccountSchema):
     @classmethod
     def as_form(cls, username: Optional[str] = Form(None), email: EmailStr = Form(...), password: str = Form(...)):
         return cls(username=username, email=email, password=password)
+
+
+class CodeFromEmailSchema(BaseModel):
+    code: str

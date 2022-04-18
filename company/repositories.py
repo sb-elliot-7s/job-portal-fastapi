@@ -4,7 +4,6 @@ from fastapi import UploadFile
 from sqlalchemy import insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from redis_service import RedisService
 from settings import get_settings
 from users.models import UserAccount
 from .interfaces.repositories_interface import CompanyRepositoriesInterface
