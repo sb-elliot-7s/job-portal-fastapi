@@ -35,15 +35,14 @@ class EmailAuthService(CreateTokensMixin):
     async def login(self, email: str, password: str):
         user = await self._authenticate(email=email, password=password)
         code = await self.two_factor_auth.generate_code()
-        sender = self._settings.sender
-        send_code_email.delay(sender, user.email, code)
+        send_code_email.delay(user.email, code)
         temporary_token = await self._token_service.create_token(email=email, token_type='access_token', exp_time=3,
                                                                  algorithm=self._settings.algorithm, secret_key=self._settings.secret_key)
         return {'temporary_token': temporary_token}
 
     async def refresh_token(self, refresh_token: str):
         payload: dict = await self._token_service.decode_refresh_token(refresh_token=refresh_token, **TOKEN_DATA)
-        await self.create_tokens(email=payload.get('email'), token_service=self._token_service)
+        return await self.create_tokens(email=payload.get('email'), token_service=self._token_service)
 
     async def verify_code_from_email(self, code: CodeFromEmailSchema, user: UserAccount):
         code = code.code

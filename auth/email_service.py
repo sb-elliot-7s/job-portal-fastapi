@@ -1,22 +1,21 @@
 import smtplib
 
-from settings import get_settings
-
 
 class EmailService:
-    def __init__(self):
-        self._settings = get_settings()
+    def __init__(self, host: str, port: int, user: str, password: str):
+        self.user = user
+        self.password = password
+        self.smtp_obj = smtplib.SMTP(host=host, port=port)
 
-    def send_email(self, from_address: str, to_address: str, message: str):
+    def login(self):
+        self.smtp_obj.login(user=self.user, password=self.password)
 
-        smtp_obj = smtplib.SMTP("smtp.gmail.com", 587)
-        smtp_obj.starttls()
-        sender = self._settings.sender
-        password = self._settings.sender_password
-        smtp_obj.login(user=sender, password=password)
+    def send_email(self, to_address: str, message: str):
+        self.smtp_obj.starttls()
+        self.login()
         try:
-            smtp_obj.sendmail(from_addr=from_address, to_addrs=to_address, msg=message)
+            self.smtp_obj.sendmail(from_addr=self.user, to_addrs=to_address, msg=message)
         except smtplib.SMTPException:
             print('Error')
         finally:
-            smtp_obj.quit()
+            self.smtp_obj.quit()
