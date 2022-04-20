@@ -10,6 +10,7 @@ from .token_service import TokenService
 from .password_service import PasswordService
 from passlib.context import CryptContext
 from endpoints import Endpoint
+from .two_factor_auth_utils import TwoFactorAuth
 
 auth_router = APIRouter(prefix='/auth', tags=['auth'])
 
@@ -17,19 +18,19 @@ user_first_login = Permissions(token_service=TokenService())
 password_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
-@auth_router.post(Endpoint.SIGN_UP.value, status_code=status.HTTP_201_CREATED, )
-async def signup(user_account: CreateUserAccountSchema, user_type: CreateUserTypeSchema,
-                 session: AsyncSession = Depends(get_session)):
+@auth_router.post(Endpoint.SIGN_UP.value, status_code=status.HTTP_201_CREATED)
+async def signup(user_account: CreateUserAccountSchema, user_type: CreateUserTypeSchema, session: AsyncSession = Depends(get_session)):
     return await EmailAuthService(
         repository=AuthRepositories(session=session), token_service=TokenService(),
-        password_service=PasswordService(context=password_context)).registration(user_account=user_account, user_type=user_type)
+        password_service=PasswordService(context=password_context)) \
+        .registration(user_account=user_account, user_type=user_type)
 
 
 @auth_router.post(Endpoint.LOGIN.value, status_code=status.HTTP_200_OK)
 async def login(user_account_data: CreateUserAccountSchema = Depends(CreateUserAccountSchema.as_form),
                 session: AsyncSession = Depends(get_session)):
     return await EmailAuthService(repository=AuthRepositories(session=session), token_service=TokenService(),
-                                  password_service=PasswordService(context=password_context)) \
+                                  password_service=PasswordService(context=password_context), two_factor_auth_context=TwoFactorAuth()) \
         .login(**user_account_data.dict(exclude_none=True))
 
 
@@ -37,7 +38,7 @@ async def login(user_account_data: CreateUserAccountSchema = Depends(CreateUserA
 async def verify_code_from_email(code: CodeFromEmailSchema, session: AsyncSession = Depends(get_session),
                                  user: UserAccount = Depends(user_first_login.get_user_before_authorize)):
     return await EmailAuthService(repository=AuthRepositories(session=session), token_service=TokenService(),
-                                  password_service=PasswordService(context=password_context)) \
+                                  password_service=PasswordService(context=password_context), two_factor_auth_context=TwoFactorAuth()) \
         .verify_code_from_email(code=code, user=user)
 
 

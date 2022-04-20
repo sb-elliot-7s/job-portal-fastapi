@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     sender: str
     sender_password: str
+    google_host_smtp: str
 
     class Config:
         env_file = '.env'

@@ -5,7 +5,7 @@ from fastapi import UploadFile
 from .interfaces.image_service_interface import SaveImageFileInterface
 
 
-class LocalSaveImageService(SaveImageFileInterface):
+class LocalSaveImageLogic(SaveImageFileInterface):
 
     def __init__(self, path_to_save: str):
         self._path = path_to_save
