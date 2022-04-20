@@ -6,6 +6,8 @@ from .interfaces.repositories_interface import ProfileRepositoryInterface
 from .models import UserAccount
 from .schemas import CreateExperienceSchema, CreateProfileSchema, CreateUserSkillSchema
 
+from image_service.interfaces.image_service_interface import SaveImageFileInterface
+
 
 class ProfileService:
     def __init__(self, repository: ProfileRepositoryInterface):
@@ -14,12 +16,20 @@ class ProfileService:
     async def get_profile(self, user: UserAccount):
         return await self._repository.get_profile(user=user)
 
-    async def delete_profile(self, user: UserAccount):
+    async def delete_profile(self, user: UserAccount, image_service: SaveImageFileInterface):
+        if user.user_image_url:
+            await image_service.delete_image(filename=user.user_image_url.split('/')[-1])
         return await self._repository.delete_profile(user=user)
 
-    async def update_profile(self, user: UserAccount, profile_data: CreateProfileSchema,
+    async def update_profile(self, user: UserAccount, profile_data: CreateProfileSchema, image_service: SaveImageFileInterface,
                              image: Optional[UploadFile] = File(None)):
-        return await self._repository.update_profile(user=user, image=image, profile_data=profile_data.dict(exclude_none=True))
+        image_name = None
+        if image:
+            if user.user_image_url:
+                await image_service.delete_image(filename=user.user_image_url.split('/')[-1])
+            image_name = image_service.generate_image_name(filename=image.filename)
+            await image_service.save_image(filename=image_name, file=image)
+        return await self._repository.update_profile(user=user, image_name=image_name, profile_data=profile_data.dict(exclude_none=True))
 
     async def add_experience(self, user: UserAccount, experience_data: CreateExperienceSchema):
         return await self._repository.add_experience(user=user, experience_data=experience_data.dict(exclude_none=True))

@@ -3,7 +3,9 @@ from fastapi import APIRouter, Depends, status, File, UploadFile, responses
 from sqlalchemy.ext.asyncio import AsyncSession
 from auth.token_service import TokenService
 from database import get_session
+from image_service.save_image_logic import LocalSaveImageLogic
 from permissions import Permissions
+from settings import IMAGE_DIR
 from .repositories import ProfileRepository
 from .services import ProfileService
 from .schemas import CreateProfileSchema, CreateExperienceSchema, ProfileSchema, CreateUserSkillSchema, ExperienceSchema, \
@@ -52,13 +54,14 @@ async def update_profile(profile_data: CreateProfileSchema = Depends(CreateProfi
                          user: UserAccount = Depends(seeker_permission.get_employee_user),
                          session: AsyncSession = Depends(get_session)):
     return await ProfileService(repository=ProfileRepository(session=session)) \
-        .update_profile(user=user, profile_data=profile_data, image=image)
+        .update_profile(user=user, profile_data=profile_data, image=image, image_service=LocalSaveImageLogic(path_to_save=IMAGE_DIR))
 
 
 @profile_router.delete(Endpoint.PROFILE.value, status_code=status.HTTP_204_NO_CONTENT)
 async def delete_profile(user: UserAccount = Depends(seeker_permission.get_employee_user),
                          session: AsyncSession = Depends(get_session)):
-    result = await ProfileService(repository=ProfileRepository(session=session)).delete_profile(user=user)
+    result = await ProfileService(repository=ProfileRepository(session=session)) \
+        .delete_profile(user=user, image_service=LocalSaveImageLogic(path_to_save=IMAGE_DIR))
     if not result:
         return responses.ORJSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={'detail': 'User not found'})
     return {'detail': 'User has been deleted'}

@@ -1,5 +1,8 @@
 from functools import lru_cache
 from pydantic import BaseSettings, HttpUrl, PostgresDsn
+from pathlib import Path
+
+IMAGE_DIR = f'{Path(__file__).resolve().parent.joinpath("images")}'
 
 
 class Settings(BaseSettings):

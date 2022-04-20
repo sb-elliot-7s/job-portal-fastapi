@@ -1,10 +1,23 @@
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status
-
 from constants import ACCESS_TOKEN_DATA, REFRESH_TOKEN_DATA
 from .interfaces.token_service_interface import TokenServiceInterface
 from jose import jwt, JWTError
 from settings import get_settings
+from common_enums import TokenType
+
+
+def token_exception_decorator(token_type: str, error_detail: str, headers: dict = None):
+    def decorator(func):
+        async def wrapper(*args, **kwargs):
+            try:
+                return await func(*args, **kwargs)
+            except jwt.ExpiredSignatureError:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f'{token_type.capitalize()} expired')
+            except JWTError:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=error_detail, headers=headers)
+        return wrapper
+    return decorator
 
 
 class TokenService(TokenServiceInterface):
@@ -16,27 +29,19 @@ class TokenService(TokenServiceInterface):
         data = {'sub': email, 'exp': expire_time, 'token_type': token_type}
         return jwt.encode(data, key=secret_key, algorithm=algorithm)
 
+    @token_exception_decorator(token_type=TokenType.ACCESS_TOKEN.value, error_detail='Could not validate credentials',
+                               headers={'WWW-Authenticate': 'Bearer'})
     async def decode_access_token(self, access_token: str, secret_key: str, algorithm: str) -> dict:
-        try:
-            payload: dict = jwt.decode(token=access_token, key=secret_key, algorithms=algorithm)
-            if payload.get('token_type') == 'access_token':
-                return payload
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Access token expired')
-        except JWTError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials',
-                                headers={"WWW-Authenticate": "Bearer"})
-
-    async def decode_refresh_token(self, refresh_token: str, secret_key: str, algorithm: str):
-        try:
-            payload: dict = jwt.decode(token=refresh_token, key=secret_key, algorithms=algorithm)
-            if payload.get('token_type') != 'refresh_token':
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid type for token')
+        payload: dict = jwt.decode(token=access_token, key=secret_key, algorithms=algorithm)
+        if payload.get('token_type') == TokenType.ACCESS_TOKEN.value:
             return payload
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Refresh token expired')
-        except jwt.JWTError:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid refresh token')
+
+    @token_exception_decorator(token_type=TokenType.REFRESH_TOKEN.value, error_detail='Invalid refresh token')
+    async def decode_refresh_token(self, refresh_token: str, secret_key: str, algorithm: str):
+        payload: dict = jwt.decode(token=refresh_token, key=secret_key, algorithms=algorithm)
+        if payload.get('token_type') != TokenType.REFRESH_TOKEN.value:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid type for token')
+        return payload
 
 
 class CreateTokensMixin:

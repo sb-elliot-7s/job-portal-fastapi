@@ -11,7 +11,7 @@ class ProfileRepositoryInterface(ABC):
     async def get_profile(self, user: UserAccount): pass
 
     @abstractmethod
-    async def update_profile(self, user: UserAccount, profile_data: dict, image: Optional[UploadFile]): pass
+    async def update_profile(self, user: UserAccount, profile_data: dict, image_name: Optional[str] = None): pass
 
     @abstractmethod
     async def add_experience(self, user: UserAccount, experience_data: dict): pass

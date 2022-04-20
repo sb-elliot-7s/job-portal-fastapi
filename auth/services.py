@@ -9,7 +9,7 @@ from .interfaces.token_service_interface import TokenServiceInterface
 from constants import TOKEN_DATA
 from settings import get_settings
 from .token_service import CreateTokensMixin
-from email_service.app import send_email_topic
+from faust_app.emails.agents import send_email_topic
 from .two_factor_auth_utils import TwoFactorAuthInterface
 
 

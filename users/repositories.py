@@ -3,11 +3,8 @@ from typing import Optional
 from sqlalchemy import select, insert, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from redis_service import RedisService
 from .interfaces.repositories_interface import ProfileRepositoryInterface
 from .models import UserAccount, Experience, UserSkill
-from fastapi import UploadFile
-from uuid import uuid4
 from settings import get_settings
 from .schemas import CreateUserSkillSchema
 from crud_base.crud import DeleteObjBase, GetObjBase
@@ -16,15 +13,13 @@ from crud_base.crud import DeleteObjBase, GetObjBase
 class ProfileRepository(DeleteObjBase, GetObjBase, ProfileRepositoryInterface):
     def __init__(self, session: AsyncSession):
         self._session = session
-        self.rs = RedisService()
 
     async def get_profile(self, user: UserAccount):
         return await self.get_single_obj_or_none(column=UserAccount, session=self._session, obj_id=user.id, detail='User not found')
 
-    async def update_profile(self, user: UserAccount, profile_data: dict, image: Optional[UploadFile]):
+    async def update_profile(self, user: UserAccount, profile_data: dict, image_name: Optional[str] = None):
         stmt = update(UserAccount).values(**profile_data).where(UserAccount.id == user.id)
-        if image:
-            image_name = str(uuid4()) + '/' + image.filename
+        if image_name:
             stmt = stmt.values(user_image_url=get_settings().domain + f'/images/{image_name}')
         profile_res = await self._session.execute(stmt.returning(UserAccount))
         await self._session.commit()

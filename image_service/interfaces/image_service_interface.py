@@ -3,6 +3,10 @@ from fastapi import UploadFile
 
 
 class SaveImageFileInterface(ABC):
+    @staticmethod
+    @abstractmethod
+    def generate_image_name(filename: str): pass
+
     @abstractmethod
     async def read_image(self, filename: str): pass
 

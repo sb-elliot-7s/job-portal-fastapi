@@ -1,6 +1,11 @@
 migrations/versions
 alembic.ini
 .idea
+images/*
+!images/empty.txt
+
+.DS_Store
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
